@@ -1,9 +1,4 @@
-# Builds HelpHive for Windows, macOS and Linux. No signing key, certificate or
-# developer account is used anywhere.
-#
-# Repo > Settings > Secrets and variables > Actions > add three secrets:
-#   SUPABASE_URL, SUPABASE_ANON_KEY, API_URL
-# Then Actions > "HelpHive desktop" > Run workflow. Download the zips from the run page.
+
 name: HelpHive desktop
 
 on:
@@ -59,6 +54,33 @@ jobs:
           python tool/patch_desktop.py ${{ matrix.platform }}
 
       - run: flutter pub get
+
+      # Windows and macOS icons come from assets/icons/launcher.png. This uses its
+      # own config file, so the Android build (Codemagic) is not affected.
+      - name: App icon (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          cat > icons_desktop.yaml <<EOF
+          flutter_launcher_icons:
+            image_path: "assets/icons/launcher.png"
+            windows:
+              generate: true
+              image_path: "assets/icons/launcher.png"
+              icon_size: 256
+          EOF
+          dart run flutter_launcher_icons -f icons_desktop.yaml
+
+      - name: App icon (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          cat > icons_desktop.yaml <<EOF
+          flutter_launcher_icons:
+            image_path: "assets/icons/launcher.png"
+            macos:
+              generate: true
+              image_path: "assets/icons/launcher.png"
+          EOF
+          dart run flutter_launcher_icons -f icons_desktop.yaml
 
       - name: Static check
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
