@@ -34,8 +34,11 @@ jobs:
         with:
           python-version: '3.x'
 
+      # Pinned: the newest stable (3.44+) crashes the macOS release build
+      # (flutter/flutter#191575, "Class with illegal cid" in _window_macos.dart).
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.9'
           channel: stable
           cache: true
 
