@@ -7,13 +7,15 @@ Nothing here needs a signing key or a developer account.
   macOS    network + file-picker entitlements, otherwise the sandbox blocks
            every request, and the app is named HelpHive
   Windows  window title and a phone-friendly starting size
-  Linux    window title and a phone-friendly starting size
+  Linux    window title, a phone-friendly starting size and the HelpHive icon
+           (Windows and macOS icons come from flutter_launcher_icons in the workflow)
 
 Usage:  python3 tool/patch_desktop.py            (patches whatever exists)
         python3 tool/patch_desktop.py macos linux
 """
 import os
 import re
+import shutil
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
@@ -76,6 +78,29 @@ def patch_linux():
     s = re.sub(r'(gtk_header_bar_set_title\(header_bar,\s*)"[^"]*"', r'\1"HelpHive"', s)
     s = re.sub(r'(gtk_window_set_title\(window,\s*)"[^"]*"', r'\1"HelpHive"', s)
     s = re.sub(r'gtk_window_set_default_size\(window,\s*\d+,\s*\d+\)', 'gtk_window_set_default_size(window, 520, 860)', s)
+
+    # window icon: ship the PNG next to the executable and load it at start-up
+    icon_src = path('assets', 'icons', 'launcher.png')
+    if os.path.exists(icon_src) and 'app_icon.png' not in s:
+        shutil.copyfile(icon_src, path('linux', 'runner', 'app_icon.png'))
+        snippet = (
+            '  {\n'
+            '    g_autofree gchar* exe = g_file_read_link("/proc/self/exe", NULL);\n'
+            '    if (exe != NULL) {\n'
+            '      g_autofree gchar* dir = g_path_get_dirname(exe);\n'
+            '      g_autofree gchar* icon = g_build_filename(dir, "data", "app_icon.png", NULL);\n'
+            '      gtk_window_set_icon_from_file(window, icon, NULL);\n'
+            '    }\n'
+            '  }\n'
+        )
+        s = re.sub(r'(\n)([ \t]*gtk_window_set_default_size\()', lambda m: '\n' + snippet + m.group(2), s, count=1)
+        cmake = path('linux', 'CMakeLists.txt')
+        if os.path.exists(cmake):
+            c = read(cmake)
+            if 'app_icon.png' not in c:
+                c += ('\ninstall(FILES "${CMAKE_CURRENT_SOURCE_DIR}/runner/app_icon.png"\n'
+                      '  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)\n')
+                write(cmake, c)
     write(p, s)
     return True
 
