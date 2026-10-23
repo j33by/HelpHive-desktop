@@ -1,111 +1,156 @@
-
+# HelpHive for Windows, macOS and Linux. No signing key, certificate or developer account needed.
+#
+# Setup (once): GitHub repo > Settings > Secrets and variables > Actions > New repository secret
+#   SUPABASE_URL        https://<project-ref>.supabase.co
+#   SUPABASE_ANON_KEY   the anon / publishable key (public by design)
+#   API_URL             https://<your-service>.onrender.com
+#
+# Run it: Actions > "HelpHive desktop" > Run workflow. The three zips appear under "Artifacts".
+# Tag a version (git tag v1.0.3 && git push --tags) and they are also attached to a GitHub Release.
 name: HelpHive desktop
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths: ['app/**', '.github/workflows/desktop.yml']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  API_URL: ${{ secrets.API_URL }}
 
 jobs:
   build:
-    name: ${{ matrix.platform }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest,  platform: linux }
-          - { os: windows-latest, platform: windows }
-          - { os: macos-latest,   platform: macos }
+          - { name: Windows, os: windows-latest, platform: windows, artifact: HelpHive-windows }
+          - { name: macOS,   os: macos-latest,   platform: macos,   artifact: HelpHive-macos }
+          - { name: Linux,   os: ubuntu-latest,  platform: linux,   artifact: HelpHive-linux }
     defaults:
       run:
         shell: bash
         working-directory: app
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
+      - name: Check the build secrets
+        working-directory: .
+        run: |
+          missing=0
+          for v in SUPABASE_URL SUPABASE_ANON_KEY API_URL; do
+            if [ -z "${!v}" ]; then echo "::error::Add the repository secret $v (Settings > Secrets and variables > Actions)"; missing=1; fi
+          done
+          exit $missing
 
-      # Pinned: the newest stable (3.44+) crashes the macOS release build
-      # (flutter/flutter#191575, "Class with illegal cid" in _window_macos.dart).
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.9'
           channel: stable
           cache: true
 
       - name: Linux build tools
         if: matrix.platform == 'linux'
+        working-directory: .
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
-      - name: Create the ${{ matrix.platform }} project and patch it
+      - name: Create the ${{ matrix.platform }} project (the repo only keeps lib/ and pubspec.yaml)
         run: |
           if [ ! -d "${{ matrix.platform }}" ]; then
-            cp -r lib "$RUNNER_TEMP/hh_lib" && cp pubspec.yaml "$RUNNER_TEMP/hh_pubspec.yaml"
+            cp -r lib /tmp/hh_lib
+            cp pubspec.yaml /tmp/hh_pubspec.yaml
             flutter create --platforms=${{ matrix.platform }} --org io.helphive --project-name helphive .
-            rm -rf lib && cp -r "$RUNNER_TEMP/hh_lib" lib && cp "$RUNNER_TEMP/hh_pubspec.yaml" pubspec.yaml
+            rm -rf lib && cp -r /tmp/hh_lib lib
+            cp /tmp/hh_pubspec.yaml pubspec.yaml
             rm -f test/widget_test.dart
           fi
-          python tool/patch_desktop.py ${{ matrix.platform }}
+          python3 tool/patch_desktop.py ${{ matrix.platform }}
 
-      - run: flutter pub get
+      - name: Get packages
+        run: flutter pub get
 
-      # Windows and macOS icons come from assets/icons/launcher.png. This uses its
-      # own config file, so the Android build (Codemagic) is not affected.
-      - name: App icon (Windows)
-        if: matrix.platform == 'windows'
+      - name: App icon (Windows and macOS)
+        if: matrix.platform != 'linux'
+        continue-on-error: true
         run: |
-          cat > icons_desktop.yaml <<EOF
+          cat > flutter_launcher_icons-desktop.yaml <<'YAML'
           flutter_launcher_icons:
-            image_path: "assets/icons/launcher.png"
+            image_path: assets/icons/launcher.png
             windows:
               generate: true
-              image_path: "assets/icons/launcher.png"
+              image_path: assets/icons/launcher.png
               icon_size: 256
-          EOF
-          dart run flutter_launcher_icons -f icons_desktop.yaml
-
-      - name: App icon (macOS)
-        if: matrix.platform == 'macos'
-        run: |
-          cat > icons_desktop.yaml <<EOF
-          flutter_launcher_icons:
-            image_path: "assets/icons/launcher.png"
             macos:
               generate: true
-              image_path: "assets/icons/launcher.png"
-          EOF
-          dart run flutter_launcher_icons -f icons_desktop.yaml
+              image_path: assets/icons/launcher.png
+          YAML
+          dart run flutter_launcher_icons -f flutter_launcher_icons-desktop.yaml
 
       - name: Static check
+        if: matrix.platform == 'linux'
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build release
         run: |
           flutter build ${{ matrix.platform }} --release \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=API_URL=${{ secrets.API_URL }}
-
-      - name: Zip (Linux)
-        if: matrix.platform == 'linux'
-        run: cd build/linux/x64/release && zip -qr "$GITHUB_WORKSPACE/HelpHive-linux.zip" bundle
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=API_URL="$API_URL"
 
       - name: Zip (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
-        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "$env:GITHUB_WORKSPACE/HelpHive-windows.zip"
+        run: |
+          New-Item -ItemType Directory -Force dist/HelpHive | Out-Null
+          Copy-Item -Recurse -Force build/windows/x64/runner/Release/* dist/HelpHive/
+          Compress-Archive -Path dist/HelpHive -DestinationPath ${{ matrix.artifact }}.zip
 
       - name: Zip (macOS)
         if: matrix.platform == 'macos'
-        run: ditto -c -k --keepParent build/macos/Build/Products/Release/HelpHive.app "$GITHUB_WORKSPACE/HelpHive-macos.zip"
+        run: |
+          # ditto keeps the symlinks and permissions inside the .app
+          ditto -c -k --sequesterRsrc --keepParent build/macos/Build/Products/Release/HelpHive.app ${{ matrix.artifact }}.zip
+
+      - name: Zip (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          cd build/linux/x64/release
+          zip -qr "$GITHUB_WORKSPACE/app/${{ matrix.artifact }}.zip" bundle
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HelpHive-${{ matrix.platform }}
-          path: HelpHive-${{ matrix.platform }}.zip
+          name: ${{ matrix.artifact }}
+          path: app/${{ matrix.artifact }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
