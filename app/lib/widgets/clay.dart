@@ -54,7 +54,9 @@ class _PressState extends State<Press> {
   @override
   Widget build(BuildContext context) {
     final live = widget.onTap != null || widget.onLongPress != null;
-    return GestureDetector(
+    return MouseRegion(
+      cursor: live ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: live ? (_) => setState(() => _down = true) : null,
       onTapCancel: live ? () => setState(() => _down = false) : null,
@@ -66,6 +68,7 @@ class _PressState extends State<Press> {
         duration: const Duration(milliseconds: 90),
         child: widget.child,
       ),
+    ),
     );
   }
 }
