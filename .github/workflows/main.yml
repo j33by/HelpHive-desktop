@@ -35,9 +35,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: Windows, os: windows-2022, platform: windows, artifact: HelpHive-windows }
-          - { name: macOS,   os: macos-latest,   platform: macos,   artifact: HelpHive-macos }
-          - { name: Linux,   os: ubuntu-latest,  platform: linux,   artifact: HelpHive-linux }
+          # Windows is pinned to the VS 2022 image. windows-latest moved to a newer Visual Studio
+          # that Flutter's CMake generator can't find ("No CMAKE_CXX_COMPILER could be found").
+          - { name: Windows, os: windows-2022,  platform: windows, artifact: HelpHive-windows }
+          - { name: macOS,   os: macos-latest,  platform: macos,   artifact: HelpHive-macos }
+          - { name: Linux,   os: ubuntu-latest, platform: linux,   artifact: HelpHive-linux }
     defaults:
       run:
         shell: bash
@@ -83,6 +85,11 @@ jobs:
       - name: Get packages
         run: flutter pub get
 
+      - name: Show toolchain (Windows)
+        if: matrix.platform == 'windows'
+        continue-on-error: true
+        run: flutter doctor -v
+
       - name: App icon (Windows and macOS)
         if: matrix.platform != 'linux'
         continue-on-error: true
@@ -106,8 +113,8 @@ jobs:
 
       - name: Build release
         env:
-          # The Windows notifications plugin still uses Microsoft's old coroutine header, which the
-          # newest Visual Studio on the runner turns into an error. This silences that one check.
+          # The Windows notifications plugin uses Microsoft's old coroutine header, which newer
+          # MSVC versions turn into an error. This silences that one check.
           CL: ${{ matrix.platform == 'windows' && '/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS' || '' }}
         run: |
           flutter build ${{ matrix.platform }} --release \
