@@ -82,6 +82,17 @@ jobs:
           fi
           python3 tool/patch_desktop.py ${{ matrix.platform }}
 
+      - name: Silence coroutine deprecation error (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          # The Windows notifications plugin uses Microsoft's old coroutine header, which newer
+          # MSVC versions turn into an error. Defining this in CMake (instead of via the CL
+          # environment variable, which broke compiler detection) silences it for every target.
+          if ! grep -q _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS windows/CMakeLists.txt; then
+            sed -i '/^project(/a add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)' windows/CMakeLists.txt
+          fi
+          head -n 8 windows/CMakeLists.txt
+
       - name: Get packages
         run: flutter pub get
 
@@ -112,15 +123,21 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build release
-        env:
-          # The Windows notifications plugin uses Microsoft's old coroutine header, which newer
-          # MSVC versions turn into an error. This silences that one check.
-          CL: ${{ matrix.platform == 'windows' && '/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS' || '' }}
         run: |
           flutter build ${{ matrix.platform }} --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=API_URL="$API_URL"
+
+      - name: CMake logs (Windows, only on failure)
+        if: failure() && matrix.platform == 'windows'
+        continue-on-error: true
+        run: |
+          for f in build/windows/x64/CMakeFiles/CMakeError.log \
+                   build/windows/x64/CMakeFiles/CMakeConfigureLog.yaml \
+                   build/windows/x64/CMakeFiles/CMakeOutput.log; do
+            if [ -f "$f" ]; then echo "=== $f ==="; tail -n 80 "$f"; fi
+          done
 
       - name: Zip (Windows)
         if: matrix.platform == 'windows'
