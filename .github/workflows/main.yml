@@ -105,6 +105,10 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build release
+        env:
+          # The Windows notifications plugin still uses Microsoft's old coroutine header, which the
+          # newest Visual Studio on the runner turns into an error. This silences that one check.
+          CL: ${{ matrix.platform == 'windows' && '/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS' || '' }}
         run: |
           flutter build ${{ matrix.platform }} --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
