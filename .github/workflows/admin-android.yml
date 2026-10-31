@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     paths: ['admin/**']
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -14,45 +16,37 @@ jobs:
     defaults:
       run:
         working-directory: admin
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: '17'
 
-      - name: Install
-        run: npm install
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
 
-      - name: Build the web bundle
-        run: npm run build:web
+      - name: Flutter version
+        run: flutter --version
 
-      - name: Create the Android project
-        run: npx cap add android
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Harden the Android project (no screenshots, no cleartext)
-        run: node scripts/patch-android.js
-
-      - name: App icons
+      - name: Analyze
+        run: flutter analyze
         continue-on-error: true
-        run: npx capacitor-assets generate --android
 
-      - name: Sync web assets
-        run: npx cap sync android
-
-      - name: Build the APK
-        working-directory: admin/android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+      - name: Build APK (debug)
+        run: flutter build apk --debug
 
       - name: Name the file
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk HelpHive-Admin.apk
+        run: cp build/app/outputs/flutter-apk/app-debug.apk HelpHive-Admin.apk
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
