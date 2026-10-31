@@ -103,6 +103,31 @@ Linux needs: `sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev l
 - 820 px and up: a side bar replaces the bottom bar (icons only up to 1180 px, with labels and your profile above that). Feed and Alerts sit in a centred 720 px column, People grows from 2 to 4 columns, and Chats show the list and the open conversation side by side once there is room.
 - Every pushed page (post, profile, compose, search) opens in a centred panel instead of stretching edge to edge. Resize the window and it adapts live, on Android tablets too.
 
+## Admin console (Windows)
+
+A separate desktop app in `admin/` for the HelpHive team: restrict, ban, strike, remove content, change a person's email or password, post events and updates, undo any of it, and an audit log of everything. See `admin/README.md` for the app itself.
+
+### Switching it on
+
+1. **Supabase**: run `supabase/schema.sql` again in the SQL editor. The new section at the end is safe to re-run. It adds `user_standing` (restricted and banned accounts, enforced by the database itself) and `announcements`.
+2. **Neon**: run `server/sql/neon.sql` again. It adds the admin, audit, moderation, report, appeal and usage tables.
+3. **Render**: add environment variables
+   - `ADMIN_JWT_SECRET`: a long random string (for example 48 random characters). Without it the `/admin` API stays off.
+   - `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD`: optional. If the `admins` table is empty when the server starts, an owner is created from them and must choose a new password at first sign-in. Remove both afterwards.
+   - Or, with a shell: `cd server && npm run create-admin -- you@example.com "Your Name" owner`
+4. Redeploy, build the admin app (`admin/`), sign in with the Render address.
+
+### How restrictions, bans and notices behave
+
+- **Restriction**: read-only for 24 hours; a repeat is 48, then 72, and so on (base time and cap are in Settings). Posting, commenting, reacting, messaging, friend requests and profile edits are blocked by both the API and the database. It ends on its own.
+- **Ban**: the person only sees a "your account is banned" screen with the reason, and can appeal. Their posts and profile disappear for everyone else.
+- **Strikes**: at 3 strikes (configurable) an automatic restriction is applied; an automatic ban can be switched on too.
+- **Every action needs a reason** (at least 8 characters). Admins pick a ready-made reason or type their own, and the dialog shows the exact text the person will read. That text arrives in their Alerts. Banned accounts, and restricted ones unless you turn it on in Settings, do not get alerts; they see the reason on their account-standing screen instead.
+- **Control tab**: undoes restrictions, bans, unbans, strikes, warnings, removed posts and comments (restored from a snapshot) and email changes. Passwords and deleted accounts cannot be undone.
+- **Privacy**: there is no way for an admin to read messages.
+- The app now reports a launch to `/me/standing` so the dashboard can count log ins, and records who was active per hour (never what they did).
+- People can report a post from the post menu; reports land in the Inbox.
+
 ## Icons
 
 Every icon is a PNG in `app/assets/icons/`, drawn by `app/tool/make_icons.py` (needs Pillow). Edit the script and re-run to change them.

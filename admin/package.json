@@ -1,0 +1,39 @@
+{
+  "name": "helphive-admin",
+  "productName": "HelpHive Admin",
+  "version": "1.0.0",
+  "description": "HelpHive administration console for Windows",
+  "main": "main.js",
+  "private": true,
+  "author": "HelpHive",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.helphive.admin",
+    "productName": "HelpHive Admin",
+    "copyright": "HelpHive",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "renderer/**/*", "package.json"],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "shortcutName": "HelpHive Admin"
+    },
+    "portable": { "artifactName": "HelpHive-Admin-portable.exe" },
+    "artifactName": "HelpHive-Admin-Setup-${version}.exe"
+  }
+}
