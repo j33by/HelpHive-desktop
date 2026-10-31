@@ -100,7 +100,14 @@ function boot() {
   }
   nav.append(h('div', { class: 'me' }, h('div', { class: 'nm' }, state.admin.name), h('div', { class: 'rl' }, state.admin.role),
     h('div', { class: 'ac' }, h('button', { class: 'btn sm', title: 'Change my password', onClick: () => changePassword() }, icon('key')), h('button', { class: 'btn sm', title: 'Lock and sign out (Ctrl+L)', onClick: () => lock() }, icon('lock'), 'Lock'), h('button', { class: 'btn sm', title: 'Sign out', onClick: () => lock('You signed out.') }, icon('out')))));
-  clear(appEl).append(nav, h('main', { id: 'main' }));
+  const scrim = h('div', { id: 'navscrim', onClick: () => setNav(false) });
+  const mTitle = h('div', { class: 't' }, 'Dashboard');
+  const mbar = h('div', { id: 'mbar' }, h('button', { class: 'btn ghost', title: 'Menu', onClick: () => setNav(true) }, icon('menu')), h('img', { src: 'assets/wasp-mark-64.png', alt: '' }), mTitle, h('button', { class: 'btn ghost', title: 'Refresh', onClick: () => view?.refresh?.() }, icon('refresh')));
+  const tabbar = h('div', { id: 'tabbar' },
+    ['dashboard', 'users', 'inbox', 'control'].filter(allowed).map((id) => h('button', { dataset: { id }, onClick: () => go(id) }, icon(VIEWS[id].icon), VIEWS[id].label, id === 'inbox' ? h('span', { class: 'ct hidden', id: 'inbox-ct2' }) : null)),
+    h('button', { onClick: () => setNav(true) }, icon('menu'), 'More'));
+  clear(appEl).append(nav, scrim, mbar, h('main', { id: 'main' }), tabbar);
+  state.mTitle = mTitle;
 
   state.nav = go;
   state.openUser = (id) => openUserDrawer(id);
@@ -116,11 +123,19 @@ function boot() {
   if (state.admin.mustChangePassword) changePassword(true);
 }
 
+function setNav(open) {
+  $('#nav')?.classList.toggle('open', open);
+  $('#navscrim')?.classList.toggle('open', open);
+}
+
 function go(id, params) {
   if (!allowed(id)) return;
   view?.destroy?.();
   current = id;
+  setNav(false);
   document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.id === id));
+  document.querySelectorAll('#tabbar button[data-id]').forEach((b) => b.classList.toggle('on', b.dataset.id === id));
+  if (state.mTitle) state.mTitle.textContent = VIEWS[id].label;
   const main = clear($('#main'));
   view = VIEWS[id].make(main, params) ?? null;
 }
@@ -131,8 +146,9 @@ async function refreshBadge() {
     let n = 0;
     if (can('reports')) n += (await get('/reports', { status: 'open' })).total;
     if (can('appeals')) n += (await get('/appeals', { status: 'pending' })).appeals.length;
-    const el = $('#inbox-ct');
-    if (el) { el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n); }
+    for (const el of [$('#inbox-ct'), $('#inbox-ct2')]) {
+      if (el) { el.textContent = n > 99 ? '99+' : n; el.classList.toggle('hidden', !n); }
+    }
   } catch { /* quiet */ }
 }
 
@@ -193,6 +209,19 @@ function palette(initial = '') {
 }
 
 // ---------------------------------------------------------------------------
+// phone layout: tables turn into cards, and each cell needs its column name
+// ---------------------------------------------------------------------------
+function labelTables(root) {
+  root.querySelectorAll?.('table.grid-t').forEach((t) => {
+    const heads = [...t.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    t.querySelectorAll('tbody tr').forEach((tr) => [...tr.children].forEach((td, i) => { if (!td.hasAttribute('data-label')) td.setAttribute('data-label', heads[i] ?? ''); }));
+  });
+}
+new MutationObserver((list) => {
+  for (const m of list) for (const n of m.addedNodes) if (n.nodeType === 1) labelTables(n.matches?.('table.grid-t') ? n.parentElement : n);
+}).observe(document.body, { childList: true, subtree: true });
+
+// ---------------------------------------------------------------------------
 // wiring
 // ---------------------------------------------------------------------------
 ['mousemove', 'keydown', 'mousedown', 'wheel'].forEach((ev) => window.addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true }));
@@ -200,6 +229,7 @@ window.addEventListener('keydown', (e) => {
   if (!state.admin) return;
   if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); palette(); }
 });
+if (!window.hh.isElectron) document.documentElement.classList.add('web');
 window.hh.on('nav', (id) => { if (state.admin) go(id); });
 window.hh.on('refresh', () => { if (state.admin) view?.refresh?.(); });
 window.hh.on('lock', () => { if (state.admin) lock(); });

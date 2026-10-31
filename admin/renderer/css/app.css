@@ -244,3 +244,113 @@ details.conn[open] summary::before { content: "− "; }
 details.json pre { margin: 6px 0 0; padding: 8px; background: #000; border: 1px solid var(--line); overflow: auto; font: 11.5px/1.5 var(--mono); color: var(--muted); max-height: 220px; }
 .textarea { width: 100%; }
 .modal .input, .modal .select, .drawer .input, .drawer .select, label.f .input, label.f .select { width: 100%; }
+
+.split { grid-template-columns: minmax(380px, 520px) 1fr; align-items: start; }
+#mbar, #tabbar { display: none; }
+
+/* ======================================================================
+   Phone and tablet layout. Desktop (Electron) never gets below 1180px,
+   so none of this changes the Windows app.
+   ====================================================================== */
+html.web #titlebar, html.web #status { display: none; }
+html.web { --title-h: env(safe-area-inset-top, 0px); --status-h: env(safe-area-inset-bottom, 0px); }
+html.web body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+
+@media (max-width: 1100px) {
+  .g-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-21, .split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  :root { --nav-w: 280px; }
+  html, body { font-size: 14px; }
+  #app { flex-direction: column; }
+  #main { min-height: 0; flex: 1 1 0; }
+  .page-body { min-height: 0; }
+  .page-head h1 { display: none; }
+  .page-head .sub { font-size: 12px; }
+
+  /* slide-in navigation */
+  #nav { position: fixed; top: var(--title-h); bottom: var(--status-h); left: 0; z-index: 80; width: min(var(--nav-w), 86vw); transform: translateX(-102%); transition: transform .18s ease-out; overflow-y: auto; }
+  #nav.open { transform: none; }
+  #nav a { padding: 11px 16px; }
+  #nav a .k { display: none; }
+  #navscrim { position: fixed; inset: 0; z-index: 79; background: rgba(0, 0, 0, .66); display: none; }
+  #navscrim.open { display: block; }
+
+  #mbar { display: flex; align-items: center; gap: 8px; flex: none; height: 48px; padding: 0 8px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  #mbar .t { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; }
+  #mbar .btn { height: 36px; width: 40px; padding: 0; }
+  #mbar img { width: 24px; height: 20px; object-fit: contain; margin: 0 4px; }
+  #tabbar { display: flex; flex: none; border-top: 1px solid var(--line); background: var(--panel); }
+  #tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0 7px; background: none; border: 0; border-top: 2px solid transparent; color: var(--muted); font-size: 10.5px; position: relative; }
+  #tabbar button.on { color: var(--white); border-top-color: var(--white); background: var(--panel-3); }
+  #tabbar button svg { width: 20px; height: 20px; }
+  #tabbar .ct { position: absolute; top: 3px; left: 54%; min-width: 16px; padding: 0 4px; font-size: 10px; background: var(--white); color: #000; font-weight: 700; text-align: center; }
+
+  .page-head { flex-wrap: wrap; padding: 10px 12px; gap: 8px; min-height: 0; }
+  .page-head .grow { flex-basis: 100%; }
+  .page-head > .seg, .page-head > .input, .page-head > .select { flex: 1 1 140px; }
+  .page-head .seg { overflow-x: auto; max-width: 100%; }
+  .page-head .seg button { flex: 1; padding: 0 9px; white-space: nowrap; }
+  .page-body { padding: 12px 12px 24px; }
+  .toolbar { gap: 6px; }
+  .toolbar .sp { display: none; }
+  .toolbar > .input, .toolbar > .select, .input.search { width: 100%; flex: 1 1 100%; }
+
+  .btn { height: 36px; }
+  .btn.sm { height: 32px; padding: 0 10px; }
+  .input, .select { height: 36px; font-size: 16px; }
+  .textarea { font-size: 16px; }
+  .seg button { height: 34px; }
+  .tabs { overflow-x: auto; }
+  .tabs button { padding: 10px 12px; white-space: nowrap; }
+
+  .kpi { min-height: 76px; padding: 10px 12px; }
+  .kpi .v { font-size: 22px; }
+  .card > header { padding: 9px 12px; flex-wrap: wrap; }
+  .card > .body { padding: 12px; }
+  .kv { grid-template-columns: 104px 1fr; }
+  .legend { gap: 10px; }
+
+  /* drawer and dialogs fill the screen */
+  .drawer { width: 100vw; border-left: 0; }
+  .drawer > header { padding: 10px 12px; }
+  .drawer > .scroll { padding: 12px 12px 24px; }
+  .modal-wrap { place-items: end center; }
+  .modal, .modal.wide { width: 100vw; max-height: 94%; border-left: 0; border-right: 0; border-bottom: 0; }
+  .modal > .body { padding: 14px; }
+  .modal > footer { flex-wrap: wrap; padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .modal > footer .btn { flex: 1 1 120px; }
+  .cmd { margin-top: 6vh; }
+  #toasts { right: 8px; left: 8px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); align-items: stretch; }
+  .pager { flex-wrap: wrap; }
+
+  /* login */
+  #login { grid-template-columns: 1fr; grid-template-rows: auto 1fr; overflow: auto; }
+  #login .hero { border-right: 0; border-bottom: 1px solid var(--line); padding: 28px 0 20px; }
+  #login .hero img { width: min(260px, 60%); }
+  #login .hero .tag { display: none; }
+  #login .form { padding: 24px 20px 32px; justify-content: flex-start; }
+}
+
+/* tables become stacked cards on phones */
+@media (max-width: 700px) {
+  .g-4, .g-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-2 { grid-template-columns: 1fr; }
+  .tablewrap { border: 0; background: transparent; overflow: visible; }
+  table.grid-t, .grid-t tbody, .grid-t tr, .grid-t td { display: block; width: 100%; }
+  .grid-t thead { display: none; }
+  .grid-t tr { background: var(--panel); border: 1px solid var(--line); margin-bottom: 8px; padding: 6px 0; }
+  .grid-t td { border: 0; padding: 4px 12px; max-width: none !important; width: 100% !important; text-align: left !important; display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+  .grid-t td::before { content: attr(data-label); flex: none; min-width: 72px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+  .grid-t td[data-label=""]::before, .grid-t td:not([data-label])::before { display: none; }
+  .grid-t td > * { min-width: 0; }
+  .grid-t td.right { justify-content: flex-end; padding-top: 8px; }
+  .trunc { white-space: normal; }
+  .ptile { flex-wrap: wrap; }
+  .ptile img { width: 56px; height: 56px; }
+}
+@media (max-width: 400px) {
+  .g-4, .g-3 { grid-template-columns: 1fr; }
+}

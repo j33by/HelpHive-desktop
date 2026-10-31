@@ -13,6 +13,27 @@ npm run dist       # builds dist/HelpHive-Admin-Setup-1.0.0.exe and a portable .
 
 The GitHub Action in `.github/workflows/admin.yml` builds the same installer on a Windows runner (Actions → HelpHive Admin → Run workflow → download the artifact). The installer is not code-signed, so Windows SmartScreen shows "More info → Run anyway" the first time.
 
+## Phone and tablet (Android APK)
+
+The same console runs on phones and tablets. Below 900 px wide it switches to a mobile layout: a slide-in menu, a bottom tab bar (Dashboard, Users, Inbox, Control, More), tables turn into cards, and dialogs and the account panel go full screen. It follows rotation and any screen size.
+
+It is the same code wrapped with Capacitor, so every feature works. The Android app also blocks screenshots (FLAG_SECURE) and the back button closes dialogs first.
+
+**Build it on GitHub:** Actions → "HelpHive Admin (Android APK)" (or "Build HelpHive Admin (Android APK)" when `admin/` is its own repo) → Run workflow → download `helphive-admin-android` → unzip → `HelpHive-Admin.apk`. Copy it to the phone and install it (allow "install unknown apps" for the app you open it from). It is a debug-signed APK, fine for your own team.
+
+**Build it locally** (needs Node 22, JDK 21 and the Android SDK):
+
+```
+cd admin
+npm install
+npm run build:web
+npm run android:add     # once
+npm run android:sync
+cd android && ./gradlew assembleDebug     # app/build/outputs/apk/debug/app-debug.apk
+```
+
+No server change is needed. Requests from the Android app go through the native HTTP layer, so there is no CORS setup. The server address must be https.
+
 ## Sign in
 
 Enter your server address (the Render URL) and your admin email and password. Admin accounts are **not** app accounts; they live in the `admins` table. The first owner is created in one of two ways (see the main README, "Admin console").
@@ -29,6 +50,8 @@ The sign-in token is kept only in memory by the app. Closing it signs you out, a
 | F5 | Refresh the current tab |
 | Ctrl+L | Lock and sign out |
 | Esc | Close a dialog or drawer |
+
+(Keyboard shortcuts are for the Windows app.)
 
 ## What is in each tab
 

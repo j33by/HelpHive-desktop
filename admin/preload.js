@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('hh', {
+  isElectron: true,
   config: () => ipcRenderer.invoke('config:get'),
   login: (p) => ipcRenderer.invoke('auth:login', p),
   logout: () => ipcRenderer.invoke('auth:logout'),

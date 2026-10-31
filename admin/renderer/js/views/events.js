@@ -69,7 +69,7 @@ export default function events(root) {
       previewBox, h('div', { class: 'row' }, submit)));
 
   const list = h('div', { class: 'col' });
-  body.append(h('div', { class: 'grid', style: 'grid-template-columns:minmax(380px,520px) 1fr;align-items:start' }, form, h('div', { class: 'card' }, h('header', h('h3', 'Posted')), h('div', { class: 'body' }, list))));
+  body.append(h('div', { class: 'grid split' }, form, h('div', { class: 'card' }, h('header', h('h3', 'Posted')), h('div', { class: 'body' }, list))));
 
   async function loadList() {
     clear(list).append(loading(4));

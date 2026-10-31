@@ -8,21 +8,48 @@
   "author": "HelpHive",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64 --publish never"
+    "dist": "electron-builder --win --x64 --publish never",
+    "build:web": "node scripts/build-web.js",
+    "android:add": "npx cap add android && node scripts/patch-android.js",
+    "android:sync": "npm run build:web && npx cap sync android",
+    "android:apk": "npm run android:sync && cd android && gradlew assembleDebug"
   },
   "devDependencies": {
     "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/assets": "^3.0.5"
   },
   "build": {
     "appId": "io.helphive.admin",
     "productName": "HelpHive Admin",
     "copyright": "HelpHive",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.js", "preload.js", "renderer/**/*", "package.json"],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
     "win": {
       "icon": "build/icon.ico",
-      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -33,7 +60,16 @@
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "HelpHive Admin"
     },
-    "portable": { "artifactName": "HelpHive-Admin-portable.exe" },
+    "portable": {
+      "artifactName": "HelpHive-Admin-portable.exe"
+    },
     "artifactName": "HelpHive-Admin-Setup-${version}.exe"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/share": "^7.0.0"
   }
 }

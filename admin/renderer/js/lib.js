@@ -58,6 +58,7 @@ const P = {
   note: '<path d="M5 3h14v14l-4 4H5z"/><path d="M15 21v-4h4M8 9h8M8 13h5"/>',
   chevron: '<path d="M9 5l7 7-7 7"/>',
   flag: '<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   copy: '<rect x="8" y="8" width="12" height="12"/><path d="M4 16V4h12"/>',
 };
 export function icon(name, size) {
