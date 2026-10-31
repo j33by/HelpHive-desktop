@@ -1,61 +1,98 @@
-name: HelpHive Admin (Android APK)
+# HelpHive for Android (APK). Same secrets as the desktop workflow:
+#   SUPABASE_URL        https://<project-ref>.supabase.co
+#   SUPABASE_ANON_KEY   the anon / publishable key
+#   API_URL             https://<your-service>.onrender.com
+#
+# Run it: Actions > "HelpHive Android APK" > Run workflow > download "HelpHive-android".
+name: HelpHive Android APK
 
 on:
   workflow_dispatch:
   push:
-    paths: ['admin/**']
-    tags:
-      - 'v*'
+    tags: ['v*']
 
 permissions:
   contents: write
 
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  API_URL: ${{ secrets.API_URL }}
+
 jobs:
   apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
-        working-directory: admin
+        shell: bash
+        working-directory: app   # pubspec.yaml lives in app/, not in the repo root
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Check the build secrets
+        working-directory: .
+        run: |
+          missing=0
+          for v in SUPABASE_URL SUPABASE_ANON_KEY API_URL; do
+            if [ -z "${!v}" ]; then echo "::error::Add the repository secret $v (Settings > Secrets and variables > Actions)"; missing=1; fi
+          done
+          exit $missing
+
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Flutter version
-        run: flutter --version
+      - name: Create the Android project (the repo only keeps lib/ and pubspec.yaml)
+        run: |
+          if [ ! -d android ]; then
+            cp -r lib /tmp/hh_lib
+            cp pubspec.yaml /tmp/hh_pubspec.yaml
+            flutter create --platforms=android --org io.helphive --project-name helphive .
+            rm -rf lib && cp -r /tmp/hh_lib lib
+            cp /tmp/hh_pubspec.yaml pubspec.yaml
+            rm -f test/widget_test.dart
+          fi
+          python3 tool/patch_android.py
 
-      - name: Install dependencies
+      - name: Get packages
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Launcher icons
         continue-on-error: true
+        run: dart run flutter_launcher_icons
 
-      - name: Build APK (debug)
-        run: flutter build apk --debug
+      - name: Static check
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=API_URL="$API_URL"
 
       - name: Name the file
-        run: cp build/app/outputs/flutter-apk/app-debug.apk HelpHive-Admin.apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk HelpHive.apk
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: helphive-admin-android
-          path: admin/HelpHive-Admin.apk
+          name: HelpHive-android
+          path: app/HelpHive.apk
 
       - name: Attach to the release (tags only)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: admin/HelpHive-Admin.apk
+          files: app/HelpHive.apk
