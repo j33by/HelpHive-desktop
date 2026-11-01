@@ -10,6 +10,8 @@ import 'screens/auth.dart';
 import 'screens/shell.dart';
 import 'screens/standing.dart';
 import 'services/alerts.dart';
+import 'services/update.dart';
+import 'widgets/update_card.dart';
 import 'services/secure_store.dart';
 import 'theme.dart';
 
@@ -37,6 +39,8 @@ Future<void> main() async {
   }
   await Alerts.I.init();
   runApp(const HelpHiveApp());
+  // after the first frame, so a slow or sleeping server never delays startup
+  UpdateService.I.start();
 }
 
 /// Lets a mouse or trackpad drag-scroll and pull-to-refresh like a finger does.
@@ -60,6 +64,8 @@ class HelpHiveApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
         scrollBehavior: const _AnyDeviceScroll(),
+        // the update card floats above every screen, signed in or not
+        builder: (context, child) => Stack(children: [child ?? const SizedBox.shrink(), const UpdateCard()]),
         home: Config.ready ? const Gate() : const SetupNeeded(),
       );
 }
