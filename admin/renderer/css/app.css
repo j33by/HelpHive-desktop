@@ -190,8 +190,8 @@ table.grid-t { width: 100%; border-collapse: collapse; }
 @keyframes slide { from { transform: translateX(24px); opacity: 0; } }
 .drawer > header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .drawer > .scroll { flex: 1; overflow: auto; padding: 16px 18px 28px; }
-.modal-wrap { position: fixed; inset: var(--title-h) 0 var(--status-h) 0; z-index: 70; display: grid; place-items: center; background: rgba(0, 0, 0, .7); animation: fade .1s ease-out; }
-.modal { width: min(560px, 92vw); max-height: 90%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-2); }
+.modal-wrap { position: fixed; inset: var(--title-h) 0 var(--status-h) 0; z-index: 70; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .7); animation: fade .1s ease-out; }
+.modal { width: min(560px, 92vw); max-height: 90%; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line-2); }
 .modal.wide { width: min(760px, 94vw); }
 .modal > header { padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .modal > header h2 { margin: 0; font-size: 15px; font-weight: 600; }
@@ -315,12 +315,14 @@ html.web body { overscroll-behavior: none; -webkit-tap-highlight-color: transpar
 
   /* drawer and dialogs fill the screen */
   .drawer { width: 100vw; border-left: 0; }
+  .drawer > .scroll { padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
   .drawer > header { padding: 10px 12px; }
   .drawer > .scroll { padding: 12px 12px 24px; }
-  .modal-wrap { place-items: end center; }
-  .modal, .modal.wide { width: 100vw; max-height: 94%; border-left: 0; border-right: 0; border-bottom: 0; }
-  .modal > .body { padding: 14px; }
-  .modal > footer { flex-wrap: wrap; padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .modal-wrap { align-items: flex-end; }
+  .modal, .modal.wide { width: 100vw; max-height: calc(100dvh - var(--title-h) - var(--status-h) - 12px); border-left: 0; border-right: 0; border-bottom: 0; }
+  .modal > header { flex: none; }
+  .modal > .body { padding: 14px; flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .modal > footer { flex: none; flex-wrap: wrap; padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
   .modal > footer .btn { flex: 1 1 120px; }
   .cmd { margin-top: 6vh; }
   #toasts { right: 8px; left: 8px; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); align-items: stretch; }

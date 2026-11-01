@@ -5,7 +5,7 @@
   "backgroundColor": "#0b0b0c",
   "android": {
     "allowMixedContent": false,
-    "adjustMarginsForEdgeToEdge": "auto"
+    "adjustMarginsForEdgeToEdge": "force"
   },
   "plugins": {
     "CapacitorHttp": { "enabled": true }

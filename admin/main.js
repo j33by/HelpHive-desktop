@@ -80,7 +80,7 @@ function buildMenu() {
   const go = (id) => () => win?.webContents.send('nav', id);
   const tabs = [
     ['Dashboard', 'dashboard'], ['Users', 'users'], ['Content', 'content'], ['Events', 'events'],
-    ['Inbox', 'inbox'], ['Control', 'control'], ['Audit log', 'logs'], ['Team', 'team'], ['Settings', 'settings'], ['System', 'system'],
+    ['Inbox', 'inbox'], ['Control', 'control'], ['Audit log', 'logs'], ['Team', 'team'], ['Settings', 'settings'], ['System', 'system'], ['App version', 'release'],
   ];
   const template = [
     { label: 'File', submenu: [
@@ -93,7 +93,7 @@ function buildMenu() {
       { label: 'Command palette', accelerator: 'CmdOrCtrl+K', click: () => win?.webContents.send('palette') },
       { label: 'Find user', accelerator: 'CmdOrCtrl+F', click: () => win?.webContents.send('find-user') },
       { type: 'separator' },
-      ...tabs.map(([label, id], i) => ({ label, accelerator: `CmdOrCtrl+${(i + 1) % 10}`, click: go(id) })),
+      ...tabs.map(([label, id], i) => ({ label, ...(i < 10 ? { accelerator: `CmdOrCtrl+${(i + 1) % 10}` } : {}), click: go(id) })),
     ] },
     { label: 'View', submenu: [
       { role: 'resetZoom' }, { role: 'zoomIn', accelerator: 'CmdOrCtrl+=' }, { role: 'zoomOut' },

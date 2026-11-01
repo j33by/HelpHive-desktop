@@ -11,6 +11,7 @@ import logs from './views/logs.js';
 import team from './views/team.js';
 import settings from './views/settings.js';
 import system from './views/system.js';
+import release from './views/release.js';
 import { openUserDrawer } from './views/users.js';
 
 const VIEWS = {
@@ -24,6 +25,7 @@ const VIEWS = {
   team: { label: 'Team', icon: 'team', key: 8, group: 'Administration', make: team, perm: 'team' },
   settings: { label: 'Settings', icon: 'settings', key: 9, group: 'Administration', make: settings, perm: 'team' },
   system: { label: 'System', icon: 'system', key: 0, group: 'Administration', make: system, perm: 'system' },
+  release: { label: 'App version', icon: 'download', key: '', group: 'Administration', make: release, perm: 'release' },
 };
 
 const appEl = $('#app');
@@ -96,7 +98,7 @@ function boot() {
   for (const [id, v] of Object.entries(VIEWS)) {
     if (!allowed(id)) continue;
     if (v.group !== group) { group = v.group; nav.append(h('div', { class: 'group' }, group)); }
-    nav.append(h('a', { dataset: { id }, onClick: () => go(id) }, icon(v.icon), v.label, id === 'inbox' ? h('span', { class: 'ct hidden', id: 'inbox-ct' }) : h('span', { class: 'k' }, `^${v.key}`)));
+    nav.append(h('a', { dataset: { id }, onClick: () => go(id) }, icon(v.icon), v.label, id === 'inbox' ? h('span', { class: 'ct hidden', id: 'inbox-ct' }) : v.key !== '' ? h('span', { class: 'k' }, `^${v.key}`) : null));
   }
   nav.append(h('div', { class: 'me' }, h('div', { class: 'nm' }, state.admin.name), h('div', { class: 'rl' }, state.admin.role),
     h('div', { class: 'ac' }, h('button', { class: 'btn sm', title: 'Change my password', onClick: () => changePassword() }, icon('key')), h('button', { class: 'btn sm', title: 'Lock and sign out (Ctrl+L)', onClick: () => lock() }, icon('lock'), 'Lock'), h('button', { class: 'btn sm', title: 'Sign out', onClick: () => lock('You signed out.') }, icon('out')))));
