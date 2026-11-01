@@ -24,8 +24,8 @@ const VIEWS = {
   logs: { label: 'Audit log', icon: 'logs', key: 7, group: 'Administration', make: logs, perm: 'logs' },
   team: { label: 'Team', icon: 'team', key: 8, group: 'Administration', make: team, perm: 'team' },
   settings: { label: 'Settings', icon: 'settings', key: 9, group: 'Administration', make: settings, perm: 'team' },
-  system: { label: 'System', icon: 'system', key: 0, group: 'Administration', make: system, perm: 'system' },
   release: { label: 'App version', icon: 'download', key: '', group: 'Administration', make: release, perm: 'release' },
+  system: { label: 'System', icon: 'system', key: 0, group: 'Administration', make: system, perm: 'system' },
 };
 
 const appEl = $('#app');

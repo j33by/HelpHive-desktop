@@ -273,6 +273,9 @@ html.web body { overscroll-behavior: none; -webkit-tap-highlight-color: transpar
   /* slide-in navigation */
   #nav { position: fixed; top: var(--title-h); bottom: var(--status-h); left: 0; z-index: 80; width: min(var(--nav-w), 86vw); transform: translateX(-102%); transition: transform .18s ease-out; overflow-y: auto; }
   #nav.open { transform: none; }
+  /* the last items must scroll clear of the phone's gesture bar */
+  #nav { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  #nav .me { margin-top: 12px; }
   #nav a { padding: 11px 16px; }
   #nav a .k { display: none; }
   #navscrim { position: fixed; inset: 0; z-index: 79; background: rgba(0, 0, 0, .66); display: none; }

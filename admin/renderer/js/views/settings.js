@@ -56,6 +56,7 @@ export default function settings(root) {
           h('label', { class: 'chk' }, nr, 'Also send alerts to people who are restricted at that moment'))),
         h('div', { class: 'card' }, h('header', h('h3', 'Strikes')), h('div', { class: 'body stack' },
           field('Restrict automatically at this many strikes (0 = off)', ar), field('Ban automatically at this many strikes (0 = off)', ab))),
+        h('div', { class: 'card' }, h('header', h('h3', 'App version')), h('div', { class: 'body stack' }, h('div', { class: 'muted' }, 'Choose which version people should be on. Older apps show a “Download New Version” card.'), h('button', { class: 'btn', onClick: () => state.nav('release') }, 'Open App version'))),
         h('div', { class: 'card' }, h('header', h('h3', 'Admin sessions')), h('div', { class: 'body stack' }, field('Sign admins out after (minutes idle)', idle))),
         h('div', save)),
       h('div', { class: 'col' }, h('div', { class: 'card' }, h('header', h('h3', 'Reason templates')), h('div', { class: 'body' }, h('div', { class: 'hint', style: 'margin-bottom:10px' }, 'These are the ready-made reasons in the action dialogs. Admins can still type their own.'), tplBox)))));
