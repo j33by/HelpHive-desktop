@@ -7,7 +7,15 @@ export default function release(root) {
 
   async function load() {
     clear(body).append(loading(6));
-    try { draw((await get('/release')).release); } catch (e) { clear(body).append(errorBox(e, load)); }
+    try { draw((await get('/release')).release); } catch (e) {
+      clear(body).append(e.status === 404 || e.status === 403
+        ? h('div', { class: 'card' }, h('div', { class: 'body stack' },
+          h('b', 'Your server does not have this feature yet'),
+          h('div', { class: 'muted' }, 'The server running on Render is an older version. Replace its code with the latest server folder, redeploy, then sign out and in again.'),
+          h('div', { class: 'note' }, 'Quick check: open  your-server-address/app-version  in a browser. If you see {"latestVersion":null} the server is up to date. If you see an error page, it is not.'),
+          h('button', { class: 'btn', onClick: load }, 'Try again')))
+        : errorBox(e, load));
+    }
   }
 
   function draw(r) {

@@ -117,6 +117,12 @@ A separate desktop app in `admin/` for the HelpHive team: restrict, ban, strike,
    - Or, with a shell: `cd server && npm run create-admin -- you@example.com "Your Name" owner`
 4. Redeploy, build the admin app (`admin/`), sign in with the Render address.
 
+### Installing new APKs over old ones
+
+Android only installs an update over an installed app when the new APK has the same **signing key** and a **higher version code**. The workflows now do both: they copy a fixed key (`signing/helphive-debug.keystore` for the user app, `admin/signing/helphive-debug.keystore` for the admin app) over the runner's throwaway debug key, and use the run number as the version code. APKs built before this change were signed with a random key, so uninstall the old app **once**; every build after that installs as a normal update and keeps the user's data.
+
+The keystores are committed so it works with zero setup. They only identify the app; they are not a store key. If the repository is public, anyone could sign an APK that Android would treat as an update of yours, so either keep the repo private or put your own keystore in a repository secret instead (`ANDROID_KEYSTORE_BASE64` for the user app, `ANDROID_ADMIN_KEYSTORE_BASE64` for the admin app; the key alias must be `androiddebugkey` and both passwords `android`). A secret, when present, wins over the committed file.
+
 ### Telling people to update
 
 Admin console → **App version**. Publish the newest version number (it must match `version:` in `app/pubspec.yaml` of the build you uploaded to https://helphive.freedev.app). Every install of the app on every platform that is older than it shows a floating **Download New Version** card with a Close button and **Don't show again** (that one hides it for that version only). Close hides it until the app is opened again. The app asks the public `GET /app-version` endpoint on launch and every 30 minutes. The admin console never shows this card. Remember to raise `version:` in `pubspec.yaml` for each release, then publish the same number in the console.

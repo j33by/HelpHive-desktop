@@ -1,5 +1,5 @@
 import { h, get, api, clear, loading, errorBox, toast, fail, field, busy, confirmBox } from '../lib.js';
-import { state } from '../state.js';
+import { state, can } from '../state.js';
 
 const TPL_LABEL = { warn: 'Warning', restrict: 'Restriction', unrestrict: 'Lift restriction', ban: 'Ban', unban: 'Unban', strike: 'Strike', remove_strike: 'Remove strike', delete_post: 'Remove post', delete_comment: 'Remove comment', email_change: 'Email change', password_change: 'Password change', account_delete: 'Delete account', undo: 'Undo an action' };
 
@@ -56,7 +56,7 @@ export default function settings(root) {
           h('label', { class: 'chk' }, nr, 'Also send alerts to people who are restricted at that moment'))),
         h('div', { class: 'card' }, h('header', h('h3', 'Strikes')), h('div', { class: 'body stack' },
           field('Restrict automatically at this many strikes (0 = off)', ar), field('Ban automatically at this many strikes (0 = off)', ab))),
-        h('div', { class: 'card' }, h('header', h('h3', 'App version')), h('div', { class: 'body stack' }, h('div', { class: 'muted' }, 'Choose which version people should be on. Older apps show a “Download New Version” card.'), h('button', { class: 'btn', onClick: () => state.nav('release') }, 'Open App version'))),
+        h('div', { class: 'card' }, h('header', h('h3', 'App version')), h('div', { class: 'body stack' }, h('div', { class: 'muted' }, 'Choose which version people should be on. Older apps show a “Download New Version” card.'), can('release') ? h('button', { class: 'btn', onClick: () => state.nav('release') }, 'Open App version') : h('div', { class: 'note' }, h('b', 'Not available yet. '), 'Your server does not know about app versions. Replace the server folder with the latest one and redeploy it on Render, then sign in again.'))),
         h('div', { class: 'card' }, h('header', h('h3', 'Admin sessions')), h('div', { class: 'body stack' }, field('Sign admins out after (minutes idle)', idle))),
         h('div', save)),
       h('div', { class: 'col' }, h('div', { class: 'card' }, h('header', h('h3', 'Reason templates')), h('div', { class: 'body' }, h('div', { class: 'hint', style: 'margin-bottom:10px' }, 'These are the ready-made reasons in the action dialogs. Admins can still type their own.'), tplBox)))));

@@ -89,7 +89,13 @@ function showLogin(message, bad = false) {
 // ---------------------------------------------------------------------------
 // shell
 // ---------------------------------------------------------------------------
-function allowed(id) { const v = VIEWS[id]; return v && (!v.perm || can(v.perm)); }
+function allowed(id) {
+  const v = VIEWS[id];
+  if (!v) return false;
+  if (!v.perm || can(v.perm)) return true;
+  // an owner or admin on a server that is not updated yet still gets the tab, which then explains what is missing
+  return v.perm === 'release' && ['owner', 'admin'].includes(state.admin?.role);
+}
 
 function boot() {
   drawStatus();
@@ -131,7 +137,12 @@ function setNav(open) {
 }
 
 function go(id, params) {
-  if (!allowed(id)) return;
+  if (!allowed(id)) {
+    toast(id === 'release'
+      ? 'App version is not available. Your server has not been updated yet (redeploy it from the latest code), or your role cannot open it.'
+      : 'Your role cannot open that.', true);
+    return;
+  }
   view?.destroy?.();
   current = id;
   setNav(false);
