@@ -26,6 +26,16 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Check the admin files are all in the repo
+        run: |
+          missing=0
+          for f in package.json capacitor.config.json scripts/build-web.js scripts/patch-android.js renderer/index.html renderer/js/bridge.js renderer/js/app.js assets/icon-only.png assets/icon-foreground.png assets/icon-background.png signing/helphive-debug.keystore; do
+            if [ ! -f "$f" ]; then echo "::error::Missing admin/$f. Upload the whole admin folder from admin-folder.zip."; missing=1; fi
+          done
+          echo "Files in admin/:"; ls -la
+          [ -d scripts ] && ls -la scripts
+          exit $missing
+
       - name: Install
         run: npm install
 
@@ -44,6 +54,18 @@ jobs:
 
       - name: Sync web assets
         run: npx cap sync android
+
+      - name: Sign with the fixed HelpHive Admin key (so new builds install over old ones)
+        run: |
+          mkdir -p ~/.android
+          if [ -n "${{ secrets.ANDROID_ADMIN_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_ADMIN_KEYSTORE_BASE64 }}" | base64 -d > ~/.android/debug.keystore
+            echo "Using the keystore from the ANDROID_ADMIN_KEYSTORE_BASE64 secret"
+          else
+            cp signing/helphive-debug.keystore ~/.android/debug.keystore
+            echo "Using admin/signing/helphive-debug.keystore from the repo"
+          fi
+          keytool -list -keystore ~/.android/debug.keystore -storepass android | tail -2
 
       - name: Build the APK
         working-directory: admin/android
