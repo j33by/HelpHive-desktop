@@ -76,11 +76,24 @@ jobs:
       - name: Static check
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
+      - name: Sign with the fixed HelpHive key (so new builds install over old ones)
+        run: |
+          mkdir -p ~/.android
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ~/.android/debug.keystore
+            echo "Using the keystore from the ANDROID_KEYSTORE_BASE64 secret"
+          else
+            cp "$GITHUB_WORKSPACE/signing/helphive-debug.keystore" ~/.android/debug.keystore
+            echo "Using signing/helphive-debug.keystore from the repo"
+          fi
+          keytool -list -keystore ~/.android/debug.keystore -storepass android | tail -2
+
       - name: Build APK
         run: |
           flutter build apk --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --build-number=$((GITHUB_RUN_NUMBER + 100)) \
             --dart-define=API_URL="$API_URL"
 
       - name: Name the file
